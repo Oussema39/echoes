@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 
-export const connectDb = async (): Promise<void> => {
+const connectDb = async (): Promise<void> => {
   try {
     const connectionString = process.env.DB_CONNECTION_STRING as string;
+    if (!connectionString) {
+      throw new TypeError("'connectionString' must be of type string");
+    }
     const dbName = process.env.DB_NAME as string;
     await mongoose.connect(connectionString, {
       dbName,
@@ -12,3 +15,4 @@ export const connectDb = async (): Promise<void> => {
     console.error(error);
   }
 };
+export default connectDb;
