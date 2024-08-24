@@ -9,10 +9,14 @@ const connectDb = async (): Promise<void> => {
     const dbName = process.env.DB_NAME as string;
     await mongoose.connect(connectionString, {
       dbName,
+      maxPoolSize: 10,
     });
     console.log("DB connected successfully");
   } catch (error) {
     console.error(error);
   }
 };
+
+connectDb();
+
 export default connectDb;

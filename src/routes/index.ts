@@ -1,8 +1,7 @@
-import express from "express";
-const router = express.Router();
+import { Router, type Router as TRouter } from "express";
+import UserRouter from "./UserRoutes";
 
-router.get("/", (_req, res) => {
-  res.status(200).send("Hello World !");
-});
+const router: TRouter = Router();
+router.use("/user", UserRouter);
 
 export default router;
