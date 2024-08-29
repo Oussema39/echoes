@@ -8,10 +8,10 @@ export const validateEmail = (email: string): Boolean => {
   return !emailValidation.error;
 };
 
-export const JoiUser = Joi.object({
-  firstName: Joi.string().optional(),
-  lastName: Joi.string().optional(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(8).required(),
-  age: Joi.number().optional().allow(null, undefined),
-});
+// export const JoiUser = Joi.object({
+//   firstName: Joi.string().optional(),
+//   lastName: Joi.string().optional(),
+//   email: Joi.string().email().required(),
+//   password: Joi.string().min(8).required(),
+//   age: Joi.number().optional().allow(null, undefined),
+// });

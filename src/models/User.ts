@@ -29,19 +29,21 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
   }
 );
 
-const preSave = async (next: CallbackWithoutResultAndOptionalError) => {
-  const user = this! as IUser;
+async function preSave(next: CallbackWithoutResultAndOptionalError) {
+  // @ts-ignore
+  const user = this as IUser;
   if (!user.isModified("password")) return next();
 
   const hashedPassword = await hashPassword(user.password);
   if (hashedPassword) {
     user.password = hashedPassword;
+    return next();
   }
 
   throw new Error("Error hashing the password");
-};
+}
 
-userSchema.pre<IUser>("save", preSave.bind(userSchema));
+userSchema.pre<IUser>("save", preSave);
 
 const UserModel = mongoose.model("User", userSchema);
 
