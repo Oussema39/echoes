@@ -8,6 +8,8 @@ import { hashPassword } from "../helpers/bcrypt";
 
 const userSchema: Schema<IUser> = new Schema<IUser>(
   {
+    firstName: String,
+    lastName: String,
     age: Number,
     email: {
       type: String,
@@ -23,6 +25,10 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
       minlength: 8,
       validate: (value: string) => !!value,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -32,6 +38,10 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
 async function preSave(next: CallbackWithoutResultAndOptionalError) {
   // @ts-ignore
   const user = this as IUser;
+
+  // ** Default the value of email verified to false when first register
+  // user.emailVerified = false;
+
   if (!user.isModified("password")) return next();
 
   const hashedPassword = await hashPassword(user.password);
