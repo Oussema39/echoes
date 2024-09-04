@@ -11,6 +11,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
     firstName: String,
     lastName: String,
     age: Number,
+    refreshToken: String,
     email: {
       type: String,
       required: true,
