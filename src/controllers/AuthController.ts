@@ -1,4 +1,8 @@
-import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import jwt, {
+  JsonWebTokenError,
+  JwtPayload,
+  TokenExpiredError,
+} from "jsonwebtoken";
 import { RequestHandler } from "express";
 import UserModel from "../models/User";
 import { IUser } from "../interface/IUser";
@@ -94,14 +98,17 @@ export const loginUser: RequestHandler = async (req, res) => {
 };
 
 export const refreshAccessToken: RequestHandler = async (req, res) => {
-  const refreshToken = req.cookies?.["refreshToken"];
+  const refreshToken = req.cookies?.["refreshToken"] ?? req.body.refreshToken;
   if (!refreshToken) {
     res.status(400).json({ message: "Invalid refresh token" });
   }
 
   try {
-    const verified = jwt.verify(refreshToken, REFRESH_SECRET);
-    console.log({ verified });
+    const decoded = jwt.verify(refreshToken, REFRESH_SECRET) as JwtPayload & {
+      email: string;
+    };
+    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET);
+    res.status(200).json({ data: { accessToken }, message: "jwt refreshed" });
   } catch (err) {
     console.error(err);
 
