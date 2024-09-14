@@ -12,9 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
     "bcrypt": "^5.1.1",
     "express": "^4.19.2",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3"
   },
   "devDependencies": {
