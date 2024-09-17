@@ -5,7 +5,8 @@ import { isValidObjectId } from "mongoose";
 
 export const getUsers: RequestHandler = async (_req, res) => {
   try {
-    const users = (await UserModel.find().select("-password")) ?? [];
+    const users =
+      (await UserModel.find().select("-password -refreshToken")) ?? [];
 
     return res.status(200).json({ data: users });
   } catch (error: any) {
