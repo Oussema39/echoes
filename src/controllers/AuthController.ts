@@ -8,9 +8,11 @@ import UserModel from "../models/User";
 import { IUser } from "../interface/IUser";
 import { comparePassword } from "../helpers/bcrypt";
 import { type Document } from "mongoose";
+import { validateEmail } from "../helpers/validators";
 
 type TUserProps = Omit<IUser, keyof Document>;
 
+const EMAIL_JWT_SECRET = process.env.EMAIL_JWT_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
 
@@ -77,7 +79,7 @@ export const loginUser: RequestHandler = async (req, res) => {
       expiresIn: "7d",
     });
 
-    await UserModel.findOneAndUpdate({ email }, { $set: { refreshToken } });
+    await UserModel.updateOne({ email }, { $set: { refreshToken } });
 
     res
       .cookie("refreshToken", refreshToken, {
@@ -107,7 +109,9 @@ export const refreshAccessToken: RequestHandler = async (req, res) => {
     const decoded = jwt.verify(refreshToken, REFRESH_SECRET) as JwtPayload & {
       email: string;
     };
-    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET);
+    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
     res.status(200).json({ data: { accessToken }, message: "jwt refreshed" });
   } catch (err) {
     console.error(err);
@@ -122,4 +126,41 @@ export const refreshAccessToken: RequestHandler = async (req, res) => {
 
     res.status(500).json({ message: "Internal server error" });
   }
+};
+
+export const sendVerificationEmail: RequestHandler = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !validateEmail(email)) {
+    return res.status(400).json({ message: "Invalid email" });
+  }
+
+  const user = await UserModel.findOne({
+    email,
+  }).lean<Partial<TUserProps>>();
+
+  if (!user) {
+    return res
+      .status(400)
+      .json({ message: `User with such email doesn't exist` });
+  }
+
+  const verificationToken = jwt.sign({ email }, EMAIL_JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  await UserModel.updateOne({ email }, { verificationToken });
+
+  console.log({ verificationToken });
+
+  res.status(200).json({ message: `sending verification email to ${email}` });
+};
+
+export const verifyEmail: RequestHandler = async (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return res.status(400).json({ message: "Invalid token" });
+  }
+
+  res.status(200).json({ message: `verified email for ${token}` });
 };

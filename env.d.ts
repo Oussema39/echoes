@@ -8,5 +8,6 @@ declare namespace NodeJS {
     PORT: number;
     JWT_SECRET: string;
     REFRESH_SECRET: string;
+    EMAIL_JWT_SECRET: string;
   }
 }
