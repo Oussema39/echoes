@@ -53,6 +53,7 @@ class EmailService {
     try {
       const info = await this.transporter!.sendMail(mailOptions);
       console.log("Message sent %s", info.messageId);
+      console.log(`Preview: ${mailer.getTestMessageUrl(info)}`);
     } catch (error) {
       console.error("Error sending email:", error);
       throw error;

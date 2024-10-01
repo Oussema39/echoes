@@ -9,6 +9,8 @@ import { IUser } from "../interface/IUser";
 import { comparePassword } from "../helpers/bcrypt";
 import { type Document } from "mongoose";
 import { validateEmail } from "../helpers/validators";
+import Mailer from "../services/emailService";
+import { MailOptions } from "nodemailer/lib/json-transport";
 
 type TUserProps = Omit<IUser, keyof Document>;
 
@@ -135,25 +137,37 @@ export const sendVerificationEmail: RequestHandler = async (req, res) => {
     return res.status(400).json({ message: "Invalid email" });
   }
 
-  const user = await UserModel.findOne({
-    email,
-  }).lean<Partial<TUserProps>>();
+  try {
+    const user = await UserModel.findOne({
+      email,
+    }).lean<Partial<TUserProps>>();
 
-  if (!user) {
-    return res
-      .status(400)
-      .json({ message: `User with such email doesn't exist` });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: `User with such email doesn't exist` });
+    }
+
+    const verificationToken = jwt.sign({ email }, EMAIL_JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    await UserModel.updateOne({ email }, { verificationToken });
+
+    const messageOptions: MailOptions = {
+      from: "<noreply.oussema.heni>",
+      to: "oussema@gmail.com",
+      subject: "Hello ✔",
+      html: '<a href="https://www.google.com" target="_blank">Link</a>',
+    };
+
+    Mailer.sendEmail(messageOptions);
+
+    res.status(200).json({ message: `sending verification email to ${email}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: `Internal server error` });
   }
-
-  const verificationToken = jwt.sign({ email }, EMAIL_JWT_SECRET, {
-    expiresIn: "1h",
-  });
-
-  await UserModel.updateOne({ email }, { verificationToken });
-
-  console.log({ verificationToken });
-
-  res.status(200).json({ message: `sending verification email to ${email}` });
 };
 
 export const verifyEmail: RequestHandler = async (req, res) => {
