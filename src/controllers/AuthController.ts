@@ -157,13 +157,21 @@ export const sendVerificationEmail: RequestHandler = async (req, res) => {
     const messageOptions: MailOptions = {
       from: "<noreply.oussema.heni>",
       to: "oussema@gmail.com",
-      subject: "Hello ✔",
-      html: '<a href="https://www.google.com" target="_blank">Link</a>',
+      subject: "Email verification",
+      html: `
+        <p>Hello Writer!</p>
+        <p>Please click the link below to verify your email:</p>
+        <a href="http://localhost:5000/auth/verifyEmail?token=${verificationToken}">Verify Email</a>
+        <p>Thank you!</p>
+      `,
     };
 
-    Mailer.sendEmail(messageOptions);
+    const preview = await Mailer.sendEmail(messageOptions);
 
-    res.status(200).json({ message: `sending verification email to ${email}` });
+    res.status(200).json({
+      message: `sending verification email to ${email}`,
+      data: { preview },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: `Internal server error` });
@@ -171,10 +179,22 @@ export const sendVerificationEmail: RequestHandler = async (req, res) => {
 };
 
 export const verifyEmail: RequestHandler = async (req, res) => {
-  const { token } = req.query;
+  const { token } = { ...req.query, ...req.body } as Record<string, string>;
   if (!token) {
     return res.status(400).json({ message: "Invalid token" });
   }
+  try {
+    const decoded = jwt.verify(
+      token as string,
+      EMAIL_JWT_SECRET
+    ) as JwtPayload & {
+      email: string;
+    };
 
-  res.status(200).json({ message: `verified email for ${token}` });
+    const { email } = decoded;
+    await UserModel.updateOne({ email }, { emailVerified: true });
+    res.send(`<p>Email verified for user with email: <b>${email}</b><p>`);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

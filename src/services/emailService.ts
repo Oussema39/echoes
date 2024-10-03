@@ -46,14 +46,16 @@ class EmailService {
     }
   }
 
-  async sendEmail(mailOptions: MailOptions) {
+  async sendEmail(mailOptions: MailOptions): Promise<string | undefined> {
     if (!this.transporter) {
       await this.init();
     }
     try {
       const info = await this.transporter!.sendMail(mailOptions);
+      const preview = mailer.getTestMessageUrl(info).toString();
       console.log("Message sent %s", info.messageId);
-      console.log(`Preview: ${mailer.getTestMessageUrl(info)}`);
+      console.log(`Preview: ${preview}`);
+      return preview;
     } catch (error) {
       console.error("Error sending email:", error);
       throw error;

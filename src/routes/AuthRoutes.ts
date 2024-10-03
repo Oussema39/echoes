@@ -11,7 +11,7 @@ const router = Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.patch("/verifyEmail", verifyEmail);
+router.all("/verifyEmail", verifyEmail);
 router.post("/sendVerificationEmail", sendVerificationEmail);
 router.patch("/refreshToken", refreshAccessToken);
 
