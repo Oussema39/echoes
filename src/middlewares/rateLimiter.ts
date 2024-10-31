@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
+import { IUser } from "../interface/IUser";
 
 const lastUserRequest: Record<string, number> = {};
+type TUserProps = Omit<IUser, keyof Document>;
 
 export const rateLimiterMiddleware: RequestHandler = (req, res, next) => {
   const user: TUserProps = (req as any).user;

@@ -76,7 +76,7 @@ export const loginUser: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: `Wrong email or password ` });
     }
 
-    const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "1h" });
+    const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "24h" });
     const refreshToken = jwt.sign({ email }, REFRESH_SECRET, {
       expiresIn: "7d",
     });
