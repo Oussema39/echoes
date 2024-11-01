@@ -6,7 +6,7 @@ import { isAuthenticated } from "../middlewares/authMiddleware";
 
 const router: TRouter = Router();
 router.use("/user", isAuthenticated, UserRouter);
-router.use("/document", DocumentRouter);
+router.use("/document", isAuthenticated, DocumentRouter);
 router.use("/auth", AuthRouter);
 router.use("/", (_req, res) => {
   return res.send("Hello there! This echoes's server");

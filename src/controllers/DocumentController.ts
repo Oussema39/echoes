@@ -1,16 +1,28 @@
 import { RequestHandler } from "express";
 import Joi from "joi";
 import DocumentModel from "../models/Document";
-import { isValidObjectId } from "mongoose";
-import { formatValidationError } from "../helpers/errors";
+import { formatValidationError, joiCustomObjectId } from "../helpers/errors";
+import { IDocProps } from "../types/TDocProps";
+
+export const getDocuments: RequestHandler = async (req, res) => {
+  try {
+    const documents = await DocumentModel.find()
+      .populate("owner", "-password -refreshToken")
+      .lean();
+
+    res.status(200).json({ data: documents });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const addDocument: RequestHandler = async (req, res) => {
   const bodySchema = Joi.object({
     title: Joi.string().required(),
     content: Joi.string().required(),
-    owner: Joi.string()
-      .custom((value) => isValidObjectId(value), "ObjectId")
-      .required(),
+    owner: joiCustomObjectId().required(),
+    collaborators: Joi.array().items(Joi.string().required()).optional(),
   });
 
   const { error } = bodySchema.validate(req.body);
@@ -42,27 +54,17 @@ export const addDocument: RequestHandler = async (req, res) => {
 
     res.status(200).json({ message: "Document added", data: savedDocument });
   } catch (error) {
-    console.error(error);
+    console.error("Error adding document:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const deleteDocument: RequestHandler = async (req, res) => {
-  console.dir(req.params);
   const bodySchema = Joi.object({
-    id: Joi.string()
-      .custom((value, helpers) => {
-        if (!isValidObjectId(value)) {
-          return helpers.error("any.custom", {
-            message: "Invalid ObjectId format",
-          });
-        }
-        return value;
-      }, "ObjectId")
-      .required(),
+    id: joiCustomObjectId().required(),
   });
+
   const { error } = bodySchema.validate(req.params);
-  console.log({ error });
 
   if (error) {
     const resBody = formatValidationError(error);
@@ -70,10 +72,55 @@ export const deleteDocument: RequestHandler = async (req, res) => {
   }
 
   try {
-    const { id } = req.query;
+    const { id } = req.params;
     const removedDoc = await DocumentModel.findByIdAndDelete(id);
-    return res.status(200).json({ removedDoc, docId: id });
+    if (!removedDoc)
+      return res.status(400).json({ message: "Document doesn't exist" });
+    return res
+      .status(200)
+      .json({ message: "Document deleted", data: { removedDoc, docId: id } });
   } catch (error) {
+    console.error("Error deleting document:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateDocument: RequestHandler = async (req, res) => {
+  const reqDataSchema = Joi.object({
+    id: Joi.string().required(),
+    title: Joi.string().optional(),
+    content: Joi.string().optional(),
+    collaborators: Joi.array().items(joiCustomObjectId().required()).optional(),
+  });
+
+  const { error } = reqDataSchema.validate({ ...req.body, ...req.params });
+
+  if (error) {
+    const resBody = formatValidationError(error);
+    return res.status(400).json(resBody);
+  }
+
+  try {
+    const {
+      id,
+      ...updates
+    }: Partial<Omit<IDocProps, "owner">> & { id: string } = {
+      ...req.body,
+      ...req.params,
+    };
+
+    const updatedDoc = await DocumentModel.findByIdAndUpdate(id, updates, {
+      runValidators: true,
+      new: true,
+    }).populate("owner", "-password -refreshToken");
+
+    if (!updatedDoc) {
+      return res.status(400).json({ message: "Document not found" });
+    }
+
+    res.status(200).json({ message: "Document updated", data: updatedDoc });
+  } catch (error) {
+    console.error("Error updating document:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

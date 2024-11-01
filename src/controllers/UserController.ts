@@ -59,7 +59,7 @@ export const updateUser: RequestHandler = async (req, res) => {
     res.status(200).json({ message: "User updated", data: updatedUser });
   } catch (error: any) {
     console.error(error);
-    res.status(400).json({ message: "Could not save user, please try again" });
+    res.status(500).json({ message: "Could not save user, please try again" });
   }
 };
 

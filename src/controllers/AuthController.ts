@@ -68,12 +68,12 @@ export const loginUser: RequestHandler = async (req, res) => {
       (await UserModel.findOne({ email }).lean()) ?? ({} as IUser);
 
     if (!Boolean(user)) {
-      return res.status(400).json({ message: `Wrong email or password ` });
+      return res.status(400).json({ message: `Wrong email or password` });
     }
 
     const passwordMatches = await comparePassword(password, userPassword);
     if (!passwordMatches) {
-      return res.status(400).json({ message: `Wrong email or password ` });
+      return res.status(400).json({ message: `Wrong email or password` });
     }
 
     const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "24h" });
@@ -192,7 +192,10 @@ export const verifyEmail: RequestHandler = async (req, res) => {
     };
 
     const { email } = decoded;
-    await UserModel.updateOne({ email }, { emailVerified: true });
+    await UserModel.updateOne(
+      { email },
+      { emailVerified: true, $unset: { verificationToken: 1 } }
+    );
     res.send(`<p>Email verified for user with email: <b>${email}</b><p>`);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
