@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import Joi from "joi";
 import DocumentModel from "../models/Document";
 import { formatValidationError, joiCustomObjectId } from "../helpers/errors";
-import { IDocProps } from "../types/TDocProps";
+import { TDocProps } from "../types/TDocProps";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -104,7 +104,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
     const {
       id,
       ...updates
-    }: Partial<Omit<IDocProps, "owner">> & { id: string } = {
+    }: Partial<Omit<TDocProps, "owner">> & { id: string } = {
       ...req.body,
       ...req.params,
     };
