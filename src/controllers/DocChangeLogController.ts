@@ -1,3 +1,11 @@
-import { TDocChangeLogProps } from "../types/TDocChangeLog";
+import { TDocProps } from "../types/TDocProps";
 
-export const createDocVersion = async (docChanges: TDocChangeLogProps) => {};
+export type CreateDocProps = {
+  oldDoc: Partial<TDocProps>;
+  newDoc: Partial<TDocProps>;
+};
+
+export const createDocVersion = async ({
+  oldDoc,
+  newDoc,
+}: CreateDocProps) => {};

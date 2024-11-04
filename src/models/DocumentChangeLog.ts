@@ -6,13 +6,8 @@ const docChangeLogSchema = new Schema({
     ref: "Document",
   },
   changes: {
-    type: [
-      {
-        field: { type: String, enum: ["title", "content"], required: true },
-        oldValue: String,
-        newValue: String,
-      },
-    ],
+    title: { type: { oldValue: String, newValue: String } },
+    content: { type: { oldValue: String, newValue: String } },
   },
   version: { type: Number, required: true },
   timeStamp: { type: Number, required: true },

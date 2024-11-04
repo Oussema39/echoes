@@ -39,9 +39,13 @@ export const registerUser: RequestHandler = async (req, res) => {
       .select("-password -__v")
       .lean();
 
-    const accessToken = jwt.sign({ email: savedUser?.email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const accessToken = jwt.sign(
+      { email: savedUser?.email, id: savedUser?._id?.toString() },
+      JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     res
       .cookie("refreshToken", refreshToken, {
@@ -76,7 +80,15 @@ export const loginUser: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: `Wrong email or password` });
     }
 
-    const accessToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "24h" });
+    console.log({ user });
+
+    const accessToken = jwt.sign(
+      { email, id: user._id?.toString() },
+      JWT_SECRET,
+      {
+        expiresIn: "24h",
+      }
+    );
     const refreshToken = jwt.sign({ email }, REFRESH_SECRET, {
       expiresIn: "7d",
     });
@@ -111,9 +123,16 @@ export const refreshAccessToken: RequestHandler = async (req, res) => {
     const decoded = jwt.verify(refreshToken, REFRESH_SECRET) as JwtPayload & {
       email: string;
     };
-    const accessToken = jwt.sign({ email: decoded.email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+
+    const user = await UserModel.findOne({ email: decoded.email }).lean();
+
+    const accessToken = jwt.sign(
+      { email: decoded.email, id: user?._id?.toString() },
+      JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
     res.status(200).json({ data: { accessToken }, message: "jwt refreshed" });
   } catch (err) {
     console.error(err);

@@ -21,7 +21,7 @@ export const addDocument: RequestHandler = async (req, res) => {
   const bodySchema = Joi.object({
     title: Joi.string().required(),
     content: Joi.string().required(),
-    owner: joiCustomObjectId().required(),
+    // owner: joiCustomObjectId().required(),
     collaborators: Joi.array().items(Joi.string().required()).optional(),
   });
 
@@ -37,7 +37,11 @@ export const addDocument: RequestHandler = async (req, res) => {
     });
   }
 
-  const { title, content, owner } = req.body;
+  const { title, content } = req.body;
+  const { id: owner } = (req as any).user ?? {};
+
+  console.log({ user: (req as any).user });
+
   try {
     const newDocument = new DocumentModel({
       title,

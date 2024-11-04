@@ -1,8 +1,9 @@
-import { TDocProps } from "../types/TDocProps";
-
 export interface IDocChangeLog {
   documentId: string;
-  changes: Pick<TDocProps, "title" | "content">;
+  changes: {
+    title?: { oldValue: string; newValue: string };
+    content?: { oldValue: string; newValue: string };
+  };
   version?: number;
   timestamp: number;
   changedBy: string;
