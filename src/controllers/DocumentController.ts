@@ -3,6 +3,8 @@ import Joi from "joi";
 import DocumentModel from "../models/Document";
 import { formatValidationError, joiCustomObjectId } from "../helpers/errors";
 import { TDocProps } from "../types/TDocProps";
+import { createDocVersion } from "./DocChangeLogController";
+import { IDocument } from "../interface/IDocument";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -113,6 +115,11 @@ export const updateDocument: RequestHandler = async (req, res) => {
       ...req.params,
     };
 
+    const oldDoc = (await DocumentModel.findOne({ _id: id }).populate(
+      "owner",
+      "-password -refreshToken"
+    )) as IDocument;
+
     const updatedDoc = await DocumentModel.findByIdAndUpdate(id, updates, {
       runValidators: true,
       new: true,
@@ -121,6 +128,13 @@ export const updateDocument: RequestHandler = async (req, res) => {
     if (!updatedDoc) {
       return res.status(400).json({ message: "Document not found" });
     }
+
+    //** Create a version of the document
+    await createDocVersion({
+      newDoc: updatedDoc,
+      oldDoc,
+      changedBy: (req as any)?.user?.id,
+    });
 
     res.status(200).json({ message: "Document updated", data: updatedDoc });
   } catch (error) {

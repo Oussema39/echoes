@@ -1,6 +1,4 @@
 import { CreateDocProps } from "../controllers/DocChangeLogController";
-import { TBase } from "../types/TBase";
-import { TDocChangeLogProps } from "../types/TDocChangeLog";
 
 type FormatLogProps = CreateDocProps & { changedBy: string; version: number };
 
@@ -10,7 +8,7 @@ export const formatDocChangeLog = ({
   changedBy,
   version,
 }: FormatLogProps) => {
-  const changes: Omit<TDocChangeLogProps, keyof TBase> = {
+  const changes = {
     documentId: oldDoc._id!,
     changedBy,
     changes: {

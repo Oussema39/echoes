@@ -10,7 +10,7 @@ const docChangeLogSchema = new Schema({
     content: { type: { oldValue: String, newValue: String } },
   },
   version: { type: Number, required: true },
-  timeStamp: { type: Number, required: true },
+  timestamp: { type: Number, required: true },
   changedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
