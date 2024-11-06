@@ -1,13 +1,16 @@
 import { CreateDocProps } from "../controllers/DocChangeLogController";
+import { IDocChangeLog } from "../interface/IDocChangeLog";
+import { TDocChangeLogProps } from "../types/TDocChangeLog";
+import { TDocProps } from "../types/TDocProps";
 
-type FormatLogProps = CreateDocProps & { changedBy: string; version: number };
+type DocToDocLogProps = CreateDocProps & { changedBy: string; version: number };
 
-export const formatDocChangeLog = ({
+export const docToDocChangeLog = ({
   newDoc,
   oldDoc,
   changedBy,
   version,
-}: FormatLogProps) => {
+}: DocToDocLogProps) => {
   const changes = {
     documentId: oldDoc._id!,
     changedBy,
@@ -26,4 +29,16 @@ export const formatDocChangeLog = ({
   };
 
   return changes;
+};
+
+export const docChangeLogToDoc = (
+  docChangeLog: IDocChangeLog | TDocChangeLogProps
+): Partial<TDocProps> => {
+  const { changes } = docChangeLog;
+  const doc: Partial<TDocProps> = {
+    content: changes.content?.newValue,
+    title: changes.title?.newValue,
+  };
+
+  return doc;
 };
