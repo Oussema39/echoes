@@ -42,8 +42,6 @@ export const addDocument: RequestHandler = async (req, res) => {
   const { title, content } = req.body;
   const { id: owner } = (req as any).user ?? {};
 
-  console.log({ user: (req as any).user });
-
   try {
     const newDocument = new DocumentModel({
       title,
@@ -140,5 +138,98 @@ export const updateDocument: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error updating document:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getDocumentsByUser: RequestHandler = async (req, res) => {
+  // Validate the request query (e.g., ensure userId is valid)
+  const querySchema = Joi.object({
+    userId: Joi.string().required(), // Assuming you pass the userId as a query parameter or from JWT
+  });
+
+  const { error } = querySchema.validate(req.query);
+
+  if (error) {
+    return res.status(400).json({
+      message: "Validation error",
+      details: error.details.map((err) => ({
+        field: err.context?.key,
+        message: err.message,
+      })),
+    });
+  }
+
+  const { userId } = req.query;
+
+  try {
+    // Aggregation query to get documents where the user is the owner or a collaborator
+    const result = await DocumentModel.aggregate([
+      {
+        $match: {
+          $or: [
+            { owner: userId }, // User is the owner
+            { collaborators: userId }, // User is a collaborator
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null, // We don't need to group by a specific field, just aggregate all documents
+          owned: {
+            $push: {
+              $cond: [
+                { $eq: ["$owner", userId] }, // Check if user is owner
+                "$$ROOT", // Include the document in the "owned" list if the user is the owner
+                null, // Otherwise, add null
+              ],
+            },
+          },
+          sharedWithMe: {
+            $push: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ["$owner", userId] },
+                    { $in: [userId, "$collaborators"] },
+                  ],
+                }, // User is a collaborator but not the owner
+                "$$ROOT",
+                null,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          owned: {
+            $filter: {
+              input: "$owned",
+              as: "doc",
+              cond: { $ne: ["$$doc", null] },
+            },
+          }, // Remove null values (non-owned)
+          sharedWithMe: {
+            $filter: {
+              input: "$sharedWithMe",
+              as: "doc",
+              cond: { $ne: ["$$doc", null] },
+            },
+          }, // Remove null values (non-collaborated)
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for the user" });
+    }
+
+    // Return the documents categorized
+    return res.status(200).json(result[0]);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
