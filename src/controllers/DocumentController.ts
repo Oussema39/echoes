@@ -5,6 +5,7 @@ import { formatValidationError, joiCustomObjectId } from "../helpers/errors";
 import { TDocProps } from "../types/TDocProps";
 import { createDocVersion } from "./DocChangeLogController";
 import { IDocument } from "../interface/IDocument";
+import mongoose from "mongoose";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -142,24 +143,9 @@ export const updateDocument: RequestHandler = async (req, res) => {
 };
 
 export const getDocumentsByUser: RequestHandler = async (req, res) => {
-  // Validate the request query (e.g., ensure userId is valid)
-  const querySchema = Joi.object({
-    userId: Joi.string().required(), // Assuming you pass the userId as a query parameter or from JWT
-  });
-
-  const { error } = querySchema.validate(req.query);
-
-  if (error) {
-    return res.status(400).json({
-      message: "Validation error",
-      details: error.details.map((err) => ({
-        field: err.context?.key,
-        message: err.message,
-      })),
-    });
-  }
-
-  const { userId } = req.query;
+  const userId = mongoose.Types.ObjectId.createFromHexString(
+    (req as any)?.user?.id
+  );
 
   try {
     // Aggregation query to get documents where the user is the owner or a collaborator

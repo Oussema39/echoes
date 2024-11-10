@@ -80,8 +80,6 @@ export const loginUser: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: `Wrong email or password` });
     }
 
-    console.log({ user });
-
     const accessToken = jwt.sign(
       { email, id: user._id?.toString() },
       JWT_SECRET,
