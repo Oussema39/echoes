@@ -99,7 +99,9 @@ export const updateDocument: RequestHandler = async (req, res) => {
     collaborators: joiCollaborators,
   });
 
-  const { error } = reqDataSchema.validate({ ...req.body, ...req.params });
+  const reqData = { ...req.body, ...req.params };
+
+  const { error } = reqDataSchema.validate(reqData);
 
   if (error) {
     const resBody = formatValidationError(error);
@@ -110,28 +112,25 @@ export const updateDocument: RequestHandler = async (req, res) => {
     const {
       id,
       ...updates
-    }: Partial<Omit<TDocProps, "owner">> & { id: string } = {
-      ...req.body,
-      ...req.params,
-    };
+    }: Partial<Omit<TDocProps, "owner">> & { id: string } = reqData;
 
     const oldDoc = (await DocumentModel.findOne({ _id: id }).populate(
       "owner",
       "-password -refreshToken"
     )) as IDocument;
 
+    if (!oldDoc) {
+      return res.status(400).json({ message: "Document not found" });
+    }
+
     const updatedDoc = await DocumentModel.findByIdAndUpdate(id, updates, {
       runValidators: true,
       new: true,
     }).populate("owner", "-password -refreshToken");
 
-    if (!updatedDoc) {
-      return res.status(400).json({ message: "Document not found" });
-    }
-
     //** Create a version of the document
     await createDocVersion({
-      newDoc: updatedDoc,
+      newDoc: updatedDoc!,
       oldDoc,
       changedBy: (req as any)?.user?.id,
     });

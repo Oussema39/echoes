@@ -1,13 +1,13 @@
 import { TPermissionLevel } from "../types/TPermissionLevel";
 
-const BASE_PERMISSIONS = Object.seal({
+export const BASE_PERMISSIONS = {
   READ: "read",
   WRITE: "write",
   DELETE: "delete",
   SHARE: "share",
-});
+} as const;
 
-export const DocPermissions = Object.seal({
+export const DocPermissions = {
   [TPermissionLevel.VIEWER]: [BASE_PERMISSIONS.READ],
   [TPermissionLevel.EDITOR]: [BASE_PERMISSIONS.READ, BASE_PERMISSIONS.WRITE],
   [TPermissionLevel.MANAGER]: [
@@ -16,4 +16,4 @@ export const DocPermissions = Object.seal({
     BASE_PERMISSIONS.DELETE,
   ],
   [TPermissionLevel.OWNER]: [...Object.values(BASE_PERMISSIONS)],
-});
+} as const;
