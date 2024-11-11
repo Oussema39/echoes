@@ -6,6 +6,7 @@ import { TDocProps } from "../types/TDocProps";
 import { createDocVersion } from "./DocChangeLogController";
 import { IDocument } from "../interface/IDocument";
 import mongoose from "mongoose";
+import { joiCollaborators } from "../helpers/joiCustomTypes";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -25,7 +26,7 @@ export const addDocument: RequestHandler = async (req, res) => {
     title: Joi.string().required(),
     content: Joi.string().required(),
     // owner: joiCustomObjectId().required(),
-    collaborators: Joi.array().items(Joi.string().required()).optional(),
+    collaborators: joiCollaborators,
   });
 
   const { error } = bodySchema.validate(req.body);
@@ -95,7 +96,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
     id: Joi.string().required(),
     title: Joi.string().optional(),
     content: Joi.string().optional(),
-    collaborators: Joi.array().items(joiCustomObjectId().required()).optional(),
+    collaborators: joiCollaborators,
   });
 
   const { error } = reqDataSchema.validate({ ...req.body, ...req.params });
@@ -154,7 +155,7 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
         $match: {
           $or: [
             { owner: userId }, // User is the owner
-            { collaborators: userId }, // User is a collaborator
+            { collaborators: { $elemMatch: { userId: userId } } }, // User is a collaborator
           ],
         },
       },
