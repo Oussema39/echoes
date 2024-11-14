@@ -15,7 +15,6 @@ Welcome to **Echoes**, a modern real-time collaboration tool designed for seamle
     - [Authentication](#authentication)
     - [Document Management](#document-management)
     - [Changelog](#changelog)
-  - [API Documentation](#api-documentation)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -54,7 +53,7 @@ To get started with Echoes on your local machine, follow these steps:
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/echoes.git
+   git clone https://github.com/Oussema39/echoes.git
    cd echoes
    ```
 
@@ -99,9 +98,9 @@ The app should now be running on [http://localhost:3000](http://localhost:3000).
 
 Each document maintains a changelog, allowing users to track modifications made over time.
 
-## API Documentation
+<!-- ## API Documentation
 
-For a complete API reference, refer to the `docs` folder, where each endpoint is documented with request and response examples.
+For a complete API reference, refer to the `docs` folder, where each endpoint is documented with request and response examples. -->
 
 ## Contributing
 
