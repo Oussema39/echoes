@@ -7,6 +7,7 @@ import { createDocVersion } from "./DocChangeLogController";
 import { IDocument } from "../interface/IDocument";
 import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
+import { hasPermission } from "../helpers/utilMethods";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -79,9 +80,17 @@ export const deleteDocument: RequestHandler = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const removedDoc = await DocumentModel.findByIdAndDelete(id);
-    if (!removedDoc)
+    const doc = await DocumentModel.findById(id);
+
+    if (!doc)
       return res.status(400).json({ message: "Document doesn't exist" });
+
+    if (!hasPermission("delete", (req as any).user.id, doc)) {
+      return res.status(401).json({ message: "Unauthorized action" });
+    }
+
+    const removedDoc = await DocumentModel.findByIdAndDelete(id);
+
     return res
       .status(200)
       .json({ message: "Document deleted", data: { removedDoc, docId: id } });
@@ -121,6 +130,10 @@ export const updateDocument: RequestHandler = async (req, res) => {
 
     if (!oldDoc) {
       return res.status(400).json({ message: "Document not found" });
+    }
+
+    if (!hasPermission("write", (req as any).user.id, oldDoc)) {
+      return res.status(401).json({ message: "Unauthorized action" });
     }
 
     const updatedDoc = await DocumentModel.findByIdAndUpdate(id, updates, {
