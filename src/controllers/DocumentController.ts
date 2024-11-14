@@ -42,7 +42,7 @@ export const addDocument: RequestHandler = async (req, res) => {
     });
   }
 
-  const { title, content } = req.body;
+  const { title, content, collaborators } = req.body;
   const { id: owner } = (req as any).user ?? {};
 
   try {
@@ -50,6 +50,7 @@ export const addDocument: RequestHandler = async (req, res) => {
       title,
       content,
       owner,
+      collaborators,
     });
 
     const rawDocument = await newDocument.save();
@@ -230,5 +231,44 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error fetching documents:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const shareDocument: RequestHandler = async (req, res) => {
+  const schema = Joi.object({
+    docId: joiCustomObjectId().required(),
+    collaborators: joiCollaborators.required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json(formatValidationError(error));
+  }
+
+  const { docId, collaborators } = req.body;
+  const { id: userId } = (req as any).user ?? {};
+
+  try {
+    const document = await DocumentModel.findById(docId);
+
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (!hasPermission("share", userId, document)) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to share this document" });
+    }
+
+    document.collaborators = collaborators; // Update collaborators array
+    await document.save();
+
+    res
+      .status(200)
+      .json({ message: "Document shared successfully", data: document });
+  } catch (error) {
+    console.error("Error sharing document:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
