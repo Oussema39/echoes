@@ -5,7 +5,7 @@ const lastUserRequest: Record<string, number> = {};
 type TUserProps = Omit<IUser, keyof Document>;
 
 export const rateLimiterMiddleware: RequestHandler = (req, res, next) => {
-  const user: TUserProps = (req as any).user;
+  const user: TUserProps = req.user;
   if (!user) return res.status(401).json({ message: "Unauthorized access" });
 
   const lastRequest = lastUserRequest[user.email];

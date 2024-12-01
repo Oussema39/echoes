@@ -5,13 +5,15 @@ import { TPermission } from "../types/TPermission";
 
 export const hasPermission = (
   action: TPermission,
-  userId: string,
+  userId: string | undefined,
   doc: IDocument | TDocProps | null
 ): Boolean => {
   if (!doc) {
     console.error("hasPermission:", "doc is null");
     return false;
   }
+
+  if (!userId) return false;
 
   const userPermissionLevel = doc.collaborators?.find(
     (clb) => userId === clb.userId

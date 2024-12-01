@@ -43,7 +43,7 @@ export const addDocument: RequestHandler = async (req, res) => {
   }
 
   const { title, content, collaborators } = req.body;
-  const { id: owner } = (req as any).user ?? {};
+  const { id: owner } = req.user ?? {};
 
   try {
     const newDocument = new DocumentModel({
@@ -86,7 +86,7 @@ export const deleteDocument: RequestHandler = async (req, res) => {
     if (!doc)
       return res.status(400).json({ message: "Document doesn't exist" });
 
-    if (!hasPermission("delete", (req as any).user.id, doc)) {
+    if (!hasPermission("delete", req.user?.id, doc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -133,7 +133,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: "Document not found" });
     }
 
-    if (!hasPermission("write", (req as any).user.id, oldDoc)) {
+    if (!hasPermission("write", req.user?.id, oldDoc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -146,7 +146,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
     await createDocVersion({
       newDoc: updatedDoc!,
       oldDoc,
-      changedBy: (req as any)?.user?.id,
+      changedBy: req?.user?.id!,
     });
 
     res.status(200).json({ message: "Document updated", data: updatedDoc });
@@ -158,7 +158,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
 
 export const getDocumentsByUser: RequestHandler = async (req, res) => {
   const userId = mongoose.Types.ObjectId.createFromHexString(
-    (req as any)?.user?.id
+    req?.user?.id ?? ""
   );
 
   try {
@@ -246,7 +246,7 @@ export const shareDocument: RequestHandler = async (req, res) => {
   }
 
   const { docId, collaborators } = req.body;
-  const { id: userId } = (req as any).user ?? {};
+  const { id: userId } = req.user ?? {};
 
   try {
     const document = await DocumentModel.findById(docId);

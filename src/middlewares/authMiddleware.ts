@@ -12,7 +12,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(accessToken!, JWT_SECRET);
-    (req as any).user = decoded;
+    req.user = decoded as IUserDecoded;
     next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized access" });
