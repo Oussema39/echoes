@@ -10,14 +10,30 @@ import { joiCollaborators } from "../helpers/joiCustomTypes";
 import { hasPermission } from "../helpers/utilMethods";
 
 export const getDocuments: RequestHandler = async (req, res) => {
+  const page = parseInt(req.query.page as string, 10) || 1;
+  const limit = parseInt(req.query.limit as string, 10) || 10;
+
   try {
     const documents = await DocumentModel.find()
       .populate("owner", "-password -refreshToken")
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean();
 
-    res.status(200).json({ data: documents });
+    const totalDocuments = await DocumentModel.countDocuments();
+    const totalPages = Math.ceil(totalDocuments / limit);
+
+    res.status(200).json({
+      data: documents,
+      pagination: {
+        totalDocuments,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching documents:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
