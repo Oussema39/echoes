@@ -124,10 +124,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
       ...updates
     }: Partial<Omit<TDocProps, "owner">> & { id: string } = reqData;
 
-    const oldDoc = (await DocumentModel.findOne({ _id: id }).populate(
-      "owner",
-      "-password -refreshToken"
-    )) as IDocument;
+    const oldDoc = (await DocumentModel.findOne({ _id: id })) as IDocument;
 
     if (!oldDoc) {
       return res.status(400).json({ message: "Document not found" });

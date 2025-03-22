@@ -13,6 +13,8 @@ export const hasPermission = (
     return false;
   }
 
+  if (doc.owner.toString() === userId) return true;
+
   const userPermissionLevel = doc.collaborators?.find(
     (clb) => userId === clb.userId
   );
