@@ -25,7 +25,7 @@ export const getDocuments: RequestHandler = async (req, res) => {
 export const addDocument: RequestHandler = async (req, res) => {
   const bodySchema = Joi.object({
     title: Joi.string().required(),
-    content: Joi.string().required(),
+    content: Joi.string().optional(),
     // owner: joiCustomObjectId().required(),
     collaborators: joiCollaborators,
   });
@@ -94,7 +94,7 @@ export const deleteDocument: RequestHandler = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "Document deleted", data: { removedDoc, docId: id } });
+      .json({ message: "Document deleted", data: removedDoc });
   } catch (error) {
     console.error("Error deleting document:", error);
     res.status(500).json({ message: "Internal server error" });
