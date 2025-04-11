@@ -1,13 +1,12 @@
 import axios, { AxiosInstance } from "axios";
 
-const OPENAI_API_URL = process.env.OPENAI_API_URL;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const HF_API_URL = process.env.HF_API_URL;
+const HF_API_KEY = process.env.HF_API_KEY;
 
 const httpClient: AxiosInstance = axios.create({
-  baseURL: OPENAI_API_URL,
+  baseURL: HF_API_URL,
   headers: {
-    Authorization: `Bearer ${OPENAI_API_KEY}`,
-    "Content-Type": "application/json",
+    Authorization: `Bearer ${HF_API_KEY}`,
   },
   withCredentials: true,
 });
