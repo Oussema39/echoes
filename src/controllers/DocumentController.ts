@@ -12,6 +12,7 @@ import { hasPermission } from "../helpers/utilMethods";
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
     const documents = await DocumentModel.find()
+      .sort({ updatedAt: -1 }) // Order by updatedAt descending
       .populate("owner", "-password -refreshToken")
       .lean();
 
