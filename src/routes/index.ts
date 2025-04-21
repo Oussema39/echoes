@@ -10,8 +10,8 @@ router.use("/user", isAuthenticated, UserRouter);
 router.use("/document", isAuthenticated, DocumentRouter);
 router.use("/auth", AuthRouter);
 router.use("/ai", AIRouter);
-router.use("/", (_req, res) => {
-  return res.send("Hello there! This echoes's server");
+router.use("/", (req, res) => {
+  return res.status(404).send(`No such endpoint, cannot ${req.method}`);
 });
 
 export default router;
