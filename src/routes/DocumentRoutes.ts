@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   addDocument,
   deleteDocument,
+  generateDocumentPdf,
   getDocuments,
   getDocumentsByUser,
   shareDocument,
@@ -12,6 +13,7 @@ const router = Router();
 
 router.get("/by-user", getDocumentsByUser);
 router.post("/share", shareDocument);
+router.post("/generate-pdf", generateDocumentPdf);
 router.get("/", getDocuments);
 router.post("/", addDocument);
 router.delete("/:id", deleteDocument);

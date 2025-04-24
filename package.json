@@ -23,7 +23,8 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3",
-    "nodemailer": "^6.9.15"
+    "nodemailer": "^6.9.15",
+    "puppeteer": "^24.7.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

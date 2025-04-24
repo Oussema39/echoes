@@ -8,6 +8,7 @@ import { IDocument } from "../interface/IDocument";
 import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
 import { hasPermission } from "../helpers/utilMethods";
+import puppeteer from "puppeteer";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -20,6 +21,84 @@ export const getDocuments: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getDocumentsByUser: RequestHandler = async (req, res) => {
+  const userId = mongoose.Types.ObjectId.createFromHexString(
+    (req as any)?.user?.id
+  );
+
+  try {
+    // Aggregation query to get documents where the user is the owner or a collaborator
+    const result = await DocumentModel.aggregate([
+      {
+        $match: {
+          $or: [
+            { owner: userId }, // User is the owner
+            { collaborators: { $elemMatch: { userId: userId } } }, // User is a collaborator
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null, // We don't need to group by a specific field, just aggregate all documents
+          owned: {
+            $push: {
+              $cond: [
+                { $eq: ["$owner", userId] }, // Check if user is owner
+                "$$ROOT", // Include the document in the "owned" list if the user is the owner
+                null, // Otherwise, add null
+              ],
+            },
+          },
+          sharedWithMe: {
+            $push: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ["$owner", userId] },
+                    { $in: [userId, "$collaborators"] },
+                  ],
+                }, // User is a collaborator but not the owner
+                "$$ROOT",
+                null,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          owned: {
+            $filter: {
+              input: "$owned",
+              as: "doc",
+              cond: { $ne: ["$$doc", null] },
+            },
+          }, // Remove null values (non-owned)
+          sharedWithMe: {
+            $filter: {
+              input: "$sharedWithMe",
+              as: "doc",
+              cond: { $ne: ["$$doc", null] },
+            },
+          }, // Remove null values (non-collaborated)
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for the user" });
+    }
+
+    // Return the documents categorized
+    return res.status(200).json(result[0]);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -154,84 +233,6 @@ export const updateDocument: RequestHandler = async (req, res) => {
   }
 };
 
-export const getDocumentsByUser: RequestHandler = async (req, res) => {
-  const userId = mongoose.Types.ObjectId.createFromHexString(
-    (req as any)?.user?.id
-  );
-
-  try {
-    // Aggregation query to get documents where the user is the owner or a collaborator
-    const result = await DocumentModel.aggregate([
-      {
-        $match: {
-          $or: [
-            { owner: userId }, // User is the owner
-            { collaborators: { $elemMatch: { userId: userId } } }, // User is a collaborator
-          ],
-        },
-      },
-      {
-        $group: {
-          _id: null, // We don't need to group by a specific field, just aggregate all documents
-          owned: {
-            $push: {
-              $cond: [
-                { $eq: ["$owner", userId] }, // Check if user is owner
-                "$$ROOT", // Include the document in the "owned" list if the user is the owner
-                null, // Otherwise, add null
-              ],
-            },
-          },
-          sharedWithMe: {
-            $push: {
-              $cond: [
-                {
-                  $and: [
-                    { $ne: ["$owner", userId] },
-                    { $in: [userId, "$collaborators"] },
-                  ],
-                }, // User is a collaborator but not the owner
-                "$$ROOT",
-                null,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          owned: {
-            $filter: {
-              input: "$owned",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] },
-            },
-          }, // Remove null values (non-owned)
-          sharedWithMe: {
-            $filter: {
-              input: "$sharedWithMe",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] },
-            },
-          }, // Remove null values (non-collaborated)
-        },
-      },
-    ]);
-
-    if (result.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No documents found for the user" });
-    }
-
-    // Return the documents categorized
-    return res.status(200).json(result[0]);
-  } catch (error) {
-    console.error("Error fetching documents:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 export const shareDocument: RequestHandler = async (req, res) => {
   const schema = Joi.object({
     docId: joiCustomObjectId().required(),
@@ -268,5 +269,34 @@ export const shareDocument: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error sharing document:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const generateDocumentPdf: RequestHandler = async (req, res) => {
+  const schema = Joi.object({
+    html: Joi.string().required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json(formatValidationError(error));
+  }
+
+  try {
+    const { html } = req.body;
+    console.log({ html });
+    const browser = await puppeteer.launch({ headless: "shell" });
+    const page = await browser.newPage();
+    await page.setContent(html);
+    const pdfBuffer = await page.pdf({ format: "A4" });
+    // await browser.close();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="download.pdf"');
+
+    res.send(new Uint8Array(pdfBuffer));
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    res.status(500).json({ message: "Error generating PDF" });
   }
 };
