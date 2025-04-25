@@ -9,10 +9,9 @@ import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
 import { hasPermission } from "../helpers/utilMethods";
 import puppeteer from "puppeteer";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 import { documentHtmlTemplate } from "../constants/templates";
-import fs from "fs";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -288,26 +287,32 @@ export const generateDocumentPdf: RequestHandler = async (req, res) => {
 
   try {
     const { html } = req.body;
-    const browser = await puppeteer.launch({ headless: false });
+    const cssPath = join(
+      process.cwd(),
+      "public",
+      "assets",
+      "quillSnowStyles.css"
+    );
+
+    if (!existsSync(cssPath)) {
+      console.error("Quill CSS file not found at:", cssPath);
+      throw new Error("Quill CSS file not found");
+    }
+
+    const quillCSS = readFileSync(cssPath, "utf-8");
+    const content = documentHtmlTemplate({
+      body: html,
+      styles: quillCSS,
+    });
+
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-
-    const cssPath = path.join(__dirname, "/quillSnowStyles.css");
-
-    const quillCSS = fs.readFileSync(cssPath, "utf-8");
-
-    // Set up the HTML content and inject the Quill CSS styles
-    const content = documentHtmlTemplate({ body: html, styles: quillCSS });
-
     await page.setContent(content);
-
-    const pdfBuffer = await page.pdf({ format: "A4" });
+    const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'attachment; filename="document.pdf"');
-    res.send(pdfBuffer);
+    res.send(Buffer.from(pdfBuffer));
   } catch (error) {
     console.error("Error generating PDF:", error);
     res.status(500).json({ message: "Error generating PDF" });
