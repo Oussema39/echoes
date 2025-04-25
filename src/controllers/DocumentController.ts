@@ -9,6 +9,10 @@ import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
 import { hasPermission } from "../helpers/utilMethods";
 import puppeteer from "puppeteer";
+import { documentHtmlTemplate } from "../constants/templates";
+import fs from "fs";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -284,17 +288,26 @@ export const generateDocumentPdf: RequestHandler = async (req, res) => {
 
   try {
     const { html } = req.body;
-    console.log({ html });
-    const browser = await puppeteer.launch({ headless: "shell" });
+    const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-    await page.setContent(html);
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+
+    const cssPath = path.join(__dirname, "/quillSnowStyles.css");
+
+    const quillCSS = fs.readFileSync(cssPath, "utf-8");
+
+    // Set up the HTML content and inject the Quill CSS styles
+    const content = documentHtmlTemplate({ body: html, styles: quillCSS });
+
+    await page.setContent(content);
+
     const pdfBuffer = await page.pdf({ format: "A4" });
-    // await browser.close();
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'attachment; filename="download.pdf"');
-
-    res.send(new Uint8Array(pdfBuffer));
+    res.setHeader("Content-Disposition", 'attachment; filename="document.pdf"');
+    res.send(pdfBuffer);
   } catch (error) {
     console.error("Error generating PDF:", error);
     res.status(500).json({ message: "Error generating PDF" });
