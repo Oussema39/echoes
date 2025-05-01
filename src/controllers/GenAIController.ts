@@ -1,14 +1,15 @@
 import { RequestHandler } from "express";
 import Joi from "joi";
 import GenAi from "../services/genAiService";
-import { generateParaphrasePrompt } from "../utils/prompts";
 import { formatValidationError } from "../helpers/errors";
 import { initSSE } from "../utils/helpers";
+import { join } from "path";
+import { readFileSync } from "fs";
 
 const streamSessions = new Map<string, string>();
 
 export const initStream: RequestHandler = async (req, res) => {
-  const schema = Joi.object({
+  const schema = Joi.object<{ text: string; structuredOutput?: boolean }>({
     text: Joi.string().required(),
   });
 
@@ -19,10 +20,10 @@ export const initStream: RequestHandler = async (req, res) => {
   }
 
   const { text } = value;
+
   const streamId = crypto.randomUUID();
 
-  const prompt = generateParaphrasePrompt(text);
-  streamSessions.set(streamId, prompt);
+  streamSessions.set(streamId, text);
 
   return res.status(200).json({ streamId });
 };
@@ -39,8 +40,26 @@ export const generateStream: RequestHandler = async (req, res) => {
 
   initSSE(res);
 
+  const cssPath = join(
+    process.cwd(),
+    "public",
+    "assets",
+    "quillSnowStyles.css"
+  );
+  const cssFile = readFileSync(cssPath, "utf-8");
+
   try {
-    const stream = await GenAi.generateContentStream(prompt);
+    // await GenAi.uploadFile(cssPath, {
+    //   mimeType: "text/css",
+    // });
+
+    const styledPrompt = prompt.includes("<styles-section>")
+      ? prompt.replace("<styles-section>", cssFile)
+      : prompt;
+
+    const stream = await GenAi.generateContentStream({
+      contents: styledPrompt,
+    });
 
     for await (const chunk of stream) {
       if (chunk.text) {
