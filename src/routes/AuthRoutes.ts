@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+  authWithGoogle,
+  googleAuthCallback,
   loginUser,
   refreshAccessToken,
   registerUser,
@@ -11,6 +13,8 @@ import { rateLimiterMiddleware } from "../middlewares/rateLimiter";
 
 const router = Router();
 
+router.get("/google", authWithGoogle);
+router.get("/google/callback", googleAuthCallback);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.all("/verifyEmail", verifyEmail);

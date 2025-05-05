@@ -4,6 +4,8 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
     "compile": "tsc && node --env-file=.env dist/index.js",
     "dev": "nodemon -e ts --exec \"npm run compile\""
   },
@@ -20,6 +22,7 @@
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "googleapis": "^148.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3",

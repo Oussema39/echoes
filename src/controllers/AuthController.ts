@@ -11,6 +11,8 @@ import { type Document } from "mongoose";
 import { validateEmail } from "../helpers/validators";
 import Mailer from "../services/emailService";
 import { MailOptions } from "nodemailer/lib/json-transport";
+import GoogleApiService from "../services/googleApiService";
+import Joi from "joi";
 
 type TUserProps = Omit<IUser, keyof Document>;
 
@@ -216,5 +218,38 @@ export const verifyEmail: RequestHandler = async (req, res) => {
     res.send(`<p>Email verified for user with email: <b>${email}</b><p>`);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const authWithGoogle: RequestHandler = async (_, res) => {
+  try {
+    const url = GoogleApiService.generateAuthUrl({
+      scope: ["email", "profile"],
+    });
+    res.redirect(url);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Oops! Something went wrong logging in" });
+  }
+};
+
+export const googleAuthCallback: RequestHandler = (req, res) => {
+  try {
+    const schema = Joi.object<{ code: string }>({
+      code: Joi.string(),
+    });
+
+    const { value, error } = schema.validate(req.query);
+
+    if (error) throw new Error(error.message);
+
+    const { code } = value;
+
+    console.log({ code });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(404)
+      .json({ message: "No code was received after google sign in" });
   }
 };
