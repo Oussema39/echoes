@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const accessToken = req.headers.authorization?.split(" ")?.[1];
+  const accessToken =
+    req.headers.authorization?.split(" ")?.[1] ?? req.cookies.auth_token;
 
   if (!accessToken) {
     return res.status(401).json({ message: "Missing authorization token" });

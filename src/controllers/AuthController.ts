@@ -13,12 +13,15 @@ import Mailer from "../services/emailService";
 import { MailOptions } from "nodemailer/lib/json-transport";
 import GoogleApiService from "../services/googleApiService";
 import Joi from "joi";
+import UserServices from "../services/UserServices";
+import { TAuthProvider } from "../types/TAuthProvider";
 
 type TUserProps = Omit<IUser, keyof Document>;
 
 const EMAIL_JWT_SECRET = process.env.EMAIL_JWT_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 export const registerUser: RequestHandler = async (req, res) => {
   try {
@@ -68,7 +71,11 @@ export const registerUser: RequestHandler = async (req, res) => {
 };
 
 export const loginUser: RequestHandler = async (req, res) => {
-  const { email, password }: Pick<TUserProps, "email" | "password"> = req.body;
+  type RequiredUserProps = {
+    [K in keyof Pick<TUserProps, "email" | "password">]-?: TUserProps[K];
+  };
+
+  const { email, password }: RequiredUserProps = req.body;
   try {
     const { password: userPassword, ...user } =
       (await UserModel.findOne({ email }).lean()) ?? ({} as IUser);
@@ -77,7 +84,7 @@ export const loginUser: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: `Wrong email or password` });
     }
 
-    const passwordMatches = await comparePassword(password, userPassword);
+    const passwordMatches = await comparePassword(password, userPassword!);
     if (!passwordMatches) {
       return res.status(400).json({ message: `Wrong email or password` });
     }
@@ -233,23 +240,107 @@ export const authWithGoogle: RequestHandler = async (_, res) => {
   }
 };
 
-export const googleAuthCallback: RequestHandler = (req, res) => {
+export const googleAuthCallback: RequestHandler = async (req, res) => {
   try {
-    const schema = Joi.object<{ code: string }>({
+    const schema = Joi.object<{
+      code: string;
+      authuser?: string;
+      prompt?: string;
+      scope?: string;
+    }>({
       code: Joi.string(),
+      authuser: Joi.string().optional(),
+      prompt: Joi.string().optional(),
+      scope: Joi.string().optional(),
     });
 
-    const { value, error } = schema.validate(req.query);
-
+    const { value, error } = schema.validate({ ...req.query });
     if (error) throw new Error(error.message);
 
-    const { code } = value;
+    const { tokens } = await GoogleApiService.instance.getToken(value.code);
+    GoogleApiService.instance.setCredentials(tokens);
+    const googleUserInfo = await GoogleApiService.instance.verifyIdToken({
+      idToken: tokens.id_token as string,
+    });
+    const googleUser = googleUserInfo.getPayload();
+    const googleId = googleUser?.sub;
 
-    console.log({ code });
+    const user = await UserServices.findUserByGoogleId(googleId);
+
+    if (user) {
+      const jwtToken = UserServices.createJWT({
+        id: user?._id,
+        googleId: user?.googleId,
+      });
+
+      const { extras, ...userData } = user;
+      const stringified = JSON.stringify(userData);
+
+      res
+        .cookie("auth_token", jwtToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+        })
+        .cookie("user_data", stringified)
+        .redirect(FRONTEND_URL);
+
+      return;
+    }
+
+    const createdUser = await UserServices.createUser({
+      firstName: googleUser?.given_name,
+      lastName: googleUser?.family_name,
+      email: googleUser?.email,
+      emailVerified: !!googleUser?.email_verified,
+      picture: googleUser?.picture,
+      provider: TAuthProvider.GOOGLE,
+      extras: { ...googleUser },
+      googleId,
+    });
+
+    const jwtToken = UserServices.createJWT({
+      id: createdUser?._id,
+      googleId: createdUser?.googleId,
+    });
+
+    res
+      .cookie("auth_token", jwtToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+      })
+      .cookie("user_data", JSON.stringify(createdUser), {
+        secure: true,
+        sameSite: "lax",
+      })
+      .redirect(FRONTEND_URL);
   } catch (error) {
     console.error(error);
     res
       .status(404)
       .json({ message: "No code was received after google sign in" });
+  }
+};
+
+export const logoutUser: RequestHandler = (req, res) => {
+  res
+    .clearCookie("auth_token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    })
+    .status(200)
+    .json({ message: "Logged out successfully", data: req });
+};
+
+export const getCurrentUserData: RequestHandler = async (req, res) => {
+  try {
+    const { googleId } = (req as any).user;
+    const userData = await UserServices.findUserByGoogleId(googleId);
+    res.status(200).json({ data: userData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
   }
 };
