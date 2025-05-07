@@ -274,7 +274,6 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
       });
 
       const { extras, ...userData } = user;
-      const stringified = JSON.stringify(userData);
 
       res
         .cookie("auth_token", jwtToken, {
@@ -282,7 +281,6 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
           secure: true,
           sameSite: "lax",
         })
-        .cookie("user_data", stringified)
         .redirect(FRONTEND_URL);
 
       return;
@@ -310,10 +308,6 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
         secure: true,
         sameSite: "lax",
       })
-      .cookie("user_data", JSON.stringify(createdUser), {
-        secure: true,
-        sameSite: "lax",
-      })
       .redirect(FRONTEND_URL);
   } catch (error) {
     console.error(error);
@@ -324,19 +318,27 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
 };
 
 export const logoutUser: RequestHandler = (req, res) => {
-  res
-    .clearCookie("auth_token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-    })
-    .status(200)
-    .json({ message: "Logged out successfully", data: req });
+  try {
+    res
+      .clearCookie("auth_token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+      })
+      .status(200)
+      .json({ message: "Logged out successfully", data: (req as any)?.user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 };
 
 export const getCurrentUserData: RequestHandler = async (req, res) => {
   try {
-    const { googleId } = (req as any).user;
+    const { googleId } = (req as any).user ?? {};
+
+    if (!googleId) throw new Error("User doesn't exist");
+
     const userData = await UserServices.findUserByGoogleId(googleId);
     res.status(200).json({ data: userData });
   } catch (error) {
