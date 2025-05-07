@@ -5,7 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Debug TypeScript",
-      "program": "${workspaceFolder}/dist/index.js", // Your compiled entry file
+      "program": "${workspaceFolder}/dist/index.js", // Compiled entry file
       "outFiles": ["${workspaceFolder}/dist/**/*.js"], // Compiled JS files with source maps
       "preLaunchTask": "tsc: build - tsconfig.json", // Optional: triggers build before debug
       "sourceMaps": true, // Explicitly enables source maps
