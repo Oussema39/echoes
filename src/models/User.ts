@@ -5,6 +5,7 @@ import mongoose, {
 import { IUser } from "../interface/IUser";
 import { validateEmail } from "../helpers/validators";
 import { hashPassword } from "../helpers/bcrypt";
+import { TAuthProvider } from "../types/TAuthProvider";
 
 const userSchema: Schema<IUser> = new Schema<IUser>(
   {
@@ -13,6 +14,8 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
     age: Number,
     refreshToken: String,
     verificationToken: String,
+    picture: String,
+    googleId: String,
     email: {
       type: String,
       required: true,
@@ -23,7 +26,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       minlength: 8,
       validate: (value: string) => !!value,
     },
@@ -31,6 +34,12 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    provider: {
+      type: String,
+      enum: TAuthProvider,
+      default: TAuthProvider.CREDENTIALS,
+    },
+    extras: Schema.Types.Mixed,
   },
   {
     timestamps: true,
@@ -44,7 +53,7 @@ async function preSave(next: CallbackWithoutResultAndOptionalError) {
   // ** Default the value of email verified to false when first register
   // user.emailVerified = false;
 
-  if (!user.isModified("password")) return next();
+  if (!user.isModified("password") || !user.password) return next();
 
   const hashedPassword = await hashPassword(user.password);
   if (hashedPassword) {

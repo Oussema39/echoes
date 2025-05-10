@@ -9,5 +9,10 @@ declare namespace NodeJS {
     JWT_SECRET: string;
     REFRESH_SECRET: string;
     EMAIL_JWT_SECRET: string;
+    GEMINI_FLASH_API_KEY: string;
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
+    GOOGLE_REDIRECT_URI: string;
+    FRONTEND_URL: string;
   }
 }
