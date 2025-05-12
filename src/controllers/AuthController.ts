@@ -59,6 +59,11 @@ export const registerUser: RequestHandler = async (req, res) => {
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
+      .cookie("auth_token", accessToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000,
+      })
       .status(201)
       .json({
         message: "User registered",
@@ -108,6 +113,11 @@ export const loginUser: RequestHandler = async (req, res) => {
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .cookie("auth_token", accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
       })
       .status(200)
       .json({
@@ -326,7 +336,7 @@ export const logoutUser: RequestHandler = (req, res) => {
         sameSite: "lax",
       })
       .status(200)
-      .json({ message: "Logged out successfully", data: (req as any)?.user });
+      .json({ message: "Logged out successfully", data: req.user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });
@@ -335,11 +345,11 @@ export const logoutUser: RequestHandler = (req, res) => {
 
 export const getCurrentUserData: RequestHandler = async (req, res) => {
   try {
-    const { googleId } = (req as any).user ?? {};
+    const { id } = req.user ?? {};
 
-    if (!googleId) throw new Error("User doesn't exist");
+    if (!id) throw new Error("User doesn't exist");
 
-    const userData = await UserServices.findUserByGoogleId(googleId);
+    const userData = await UserServices.findUserById(id);
     res.status(200).json({ data: userData });
   } catch (error) {
     console.error(error);

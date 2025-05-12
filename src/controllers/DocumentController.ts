@@ -28,31 +28,24 @@ export const getDocuments: RequestHandler = async (req, res) => {
 };
 
 export const getDocumentsByUser: RequestHandler = async (req, res) => {
-  const userId = mongoose.Types.ObjectId.createFromHexString(
-    (req as any)?.user?.id
-  );
+  const userId = mongoose.Types.ObjectId.createFromHexString(req?.user?.id!);
 
   try {
-    // Aggregation query to get documents where the user is the owner or a collaborator
     const result = await DocumentModel.aggregate([
       {
         $match: {
           $or: [
-            { owner: userId }, // User is the owner
-            { collaborators: { $elemMatch: { userId: userId } } }, // User is a collaborator
+            { owner: userId },
+            { collaborators: { $elemMatch: { userId: userId } } },
           ],
         },
       },
       {
         $group: {
-          _id: null, // We don't need to group by a specific field, just aggregate all documents
+          _id: null,
           owned: {
             $push: {
-              $cond: [
-                { $eq: ["$owner", userId] }, // Check if user is owner
-                "$$ROOT", // Include the document in the "owned" list if the user is the owner
-                null, // Otherwise, add null
-              ],
+              $cond: [{ $eq: ["$owner", userId] }, "$$ROOT", null],
             },
           },
           sharedWithMe: {
@@ -63,7 +56,7 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
                     { $ne: ["$owner", userId] },
                     { $in: [userId, "$collaborators"] },
                   ],
-                }, // User is a collaborator but not the owner
+                },
                 "$$ROOT",
                 null,
               ],
@@ -79,25 +72,18 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
               as: "doc",
               cond: { $ne: ["$$doc", null] },
             },
-          }, // Remove null values (non-owned)
+          },
           sharedWithMe: {
             $filter: {
               input: "$sharedWithMe",
               as: "doc",
               cond: { $ne: ["$$doc", null] },
             },
-          }, // Remove null values (non-collaborated)
+          },
         },
       },
     ]);
 
-    if (result.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No documents found for the user" });
-    }
-
-    // Return the documents categorized
     return res.status(200).json(result[0]);
   } catch (error) {
     console.error("Error fetching documents:", error);
@@ -126,7 +112,7 @@ export const addDocument: RequestHandler = async (req, res) => {
   }
 
   const { title, content, collaborators } = req.body;
-  const { id: owner } = (req as any).user ?? {};
+  const { id: owner } = req.user ?? {};
 
   try {
     const newDocument = new DocumentModel({
@@ -169,7 +155,7 @@ export const deleteDocument: RequestHandler = async (req, res) => {
     if (!doc)
       return res.status(400).json({ message: "Document doesn't exist" });
 
-    if (!hasPermission("delete", (req as any).user.id, doc)) {
+    if (!hasPermission("delete", req.user?.id!, doc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -188,7 +174,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
   const reqDataSchema = Joi.object({
     id: Joi.string().required(),
     title: Joi.string().optional(),
-    content: Joi.string().optional(),
+    content: Joi.string().optional().allow(""),
     collaborators: joiCollaborators,
   });
 
@@ -213,7 +199,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: "Document not found" });
     }
 
-    if (!hasPermission("write", (req as any).user.id, oldDoc)) {
+    if (!hasPermission("write", req.user?.id!, oldDoc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -226,7 +212,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
     await createDocVersion({
       newDoc: updatedDoc!,
       oldDoc,
-      changedBy: (req as any)?.user?.id,
+      changedBy: req?.user?.id!,
     });
 
     res.status(200).json({ message: "Document updated", data: updatedDoc });
@@ -248,7 +234,7 @@ export const shareDocument: RequestHandler = async (req, res) => {
   }
 
   const { docId, collaborators } = req.body;
-  const { id: userId } = (req as any).user ?? {};
+  const { id: userId } = req.user ?? {};
 
   try {
     const document = await DocumentModel.findById(docId);
@@ -257,7 +243,7 @@ export const shareDocument: RequestHandler = async (req, res) => {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    if (!hasPermission("share", userId, document)) {
+    if (!hasPermission("share", userId!, document)) {
       return res
         .status(403)
         .json({ message: "Unauthorized to share this document" });
