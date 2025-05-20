@@ -3,7 +3,11 @@ import Joi from "joi";
 import DocumentModel from "../models/Document";
 import { formatValidationError, joiCustomObjectId } from "../helpers/errors";
 import { TDocProps } from "../types/TDocProps";
-import { createDocVersion } from "./DocChangeLogController";
+import {
+  createDocVersion,
+  getDocVersionById,
+  getDocVersionsMetadata,
+} from "./DocChangeLogController";
 import { IDocument } from "../interface/IDocument";
 import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
@@ -12,6 +16,7 @@ import puppeteer from "puppeteer";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { documentHtmlTemplate } from "../constants/templates";
+import { BASE_PERMISSIONS } from "../constants/permissions";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -33,53 +38,37 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
   try {
     const result = await DocumentModel.aggregate([
       {
-        $match: {
-          $or: [
-            { owner: userId },
-            { collaborators: { $elemMatch: { userId: userId } } },
-          ],
+        $lookup: {
+          from: "docchangelogs",
+          localField: "_id", // Field in documents collection
+          foreignField: "documentId", // Field in users collection
+          as: "versions",
         },
       },
       {
-        $group: {
-          _id: null,
-          owned: {
-            $push: {
-              $cond: [{ $eq: ["$owner", userId] }, "$$ROOT", null],
+        $set: {
+          versions: {
+            $sortArray: {
+              input: "$versions",
+              sortBy: { timestamp: -1 },
             },
           },
-          sharedWithMe: {
-            $push: {
-              $cond: [
-                {
-                  $and: [
-                    { $ne: ["$owner", userId] },
-                    { $in: [userId, "$collaborators"] },
-                  ],
+        },
+      },
+      {
+        $facet: {
+          owned: [{ $match: { owner: userId } }],
+          sharedWithMe: [
+            {
+              $match: {
+                collaborators: {
+                  $elemMatch: {
+                    userId: userId,
+                  },
                 },
-                "$$ROOT",
-                null,
-              ],
+              },
             },
-          },
-        },
-      },
-      {
-        $project: {
-          owned: {
-            $filter: {
-              input: "$owned",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] },
-            },
-          },
-          sharedWithMe: {
-            $filter: {
-              input: "$sharedWithMe",
-              as: "doc",
-              cond: { $ne: ["$$doc", null] },
-            },
-          },
+          ],
         },
       },
     ]);
@@ -155,7 +144,7 @@ export const deleteDocument: RequestHandler = async (req, res) => {
     if (!doc)
       return res.status(400).json({ message: "Document doesn't exist" });
 
-    if (!hasPermission("delete", req.user?.id!, doc)) {
+    if (!hasPermission(BASE_PERMISSIONS.DELETE, req.user?.id!, doc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -199,7 +188,7 @@ export const updateDocument: RequestHandler = async (req, res) => {
       return res.status(400).json({ message: "Document not found" });
     }
 
-    if (!hasPermission("write", req.user?.id!, oldDoc)) {
+    if (!hasPermission(BASE_PERMISSIONS.WRITE, req.user?.id!, oldDoc)) {
       return res.status(401).json({ message: "Unauthorized action" });
     }
 
@@ -302,5 +291,47 @@ export const generateDocumentPdf: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error("Error generating PDF:", error);
     res.status(500).json({ message: "Error generating PDF" });
+  }
+};
+
+export const getDocVersionsMetadataHandler: RequestHandler = async (
+  req,
+  res
+) => {
+  const schema = Joi.object<{ id: string }>({
+    id: Joi.string().required(),
+  });
+  const { error, value } = schema.validate(req.params);
+
+  if (error) {
+    res.status(403).json({ message: formatValidationError(error) });
+  }
+
+  try {
+    const versions = await getDocVersionsMetadata(value.id);
+    res.status(200).json({ versions });
+  } catch (error) {
+    console.error("Error fetching Doc Versions:", error);
+    res.status(500).json({ message: "Error fetching Doc Versions" });
+  }
+};
+
+export const getDocVersionDetails: RequestHandler = async (req, res) => {
+  const schema = Joi.object<{ id: string; versionId: string }>({
+    versionId: Joi.string().required(),
+    id: Joi.string().required(),
+  });
+  const { error, value } = schema.validate(req.params);
+
+  if (error) {
+    res.status(403).json({ message: formatValidationError(error) });
+  }
+
+  try {
+    const versionDetails = await getDocVersionById(value.versionId);
+    res.status(200).json({ versionDetails });
+  } catch (error) {
+    console.error("Error fetching Version Details:", error);
+    res.status(500).json({ message: "Error fetching Version Details" });
   }
 };

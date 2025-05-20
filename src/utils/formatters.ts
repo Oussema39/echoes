@@ -31,7 +31,7 @@ export const docToDocChangeLog = ({
   return changes;
 };
 
-export const docChangeLogToDoc = (
+export const changeLogToDoc = (
   docChangeLog: IDocChangeLog | TDocChangeLogProps
 ): Partial<TDocProps> => {
   const { changes } = docChangeLog;
