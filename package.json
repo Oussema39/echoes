@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
+    "start:render": "node dist/index.js",
     "compile": "tsc && node --env-file=.env dist/index.js",
     "dev": "nodemon -e ts --exec \"npm run compile\""
   },

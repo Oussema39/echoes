@@ -20,6 +20,8 @@ coverage/
 
 # dotenv environment variable file
 .env
+.env.production
+.env.development
 
 # TypeScript compiled files
 dist/
