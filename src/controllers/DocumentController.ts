@@ -40,8 +40,8 @@ export const getDocumentsByUser: RequestHandler = async (req, res) => {
       {
         $lookup: {
           from: "docchangelogs",
-          localField: "_id", // Field in documents collection
-          foreignField: "documentId", // Field in users collection
+          localField: "_id",
+          foreignField: "documentId",
           as: "versions",
         },
       },
