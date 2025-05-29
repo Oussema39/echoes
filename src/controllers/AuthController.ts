@@ -15,6 +15,7 @@ import GoogleApiService from "../services/googleApiService";
 import Joi from "joi";
 import UserServices from "../services/UserServices";
 import { TAuthProvider } from "../types/TAuthProvider";
+import { cookieSettings } from "../utils/helpers";
 
 type TUserProps = Omit<IUser, keyof Document>;
 
@@ -54,15 +55,12 @@ export const registerUser: RequestHandler = async (req, res) => {
 
     res
       .cookie("refreshToken", refreshToken, {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        sameSite: "strict",
+        ...cookieSettings,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .cookie("auth_token", accessToken, {
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 60 * 60 * 1000,
+        ...cookieSettings,
+        maxAge: 24 * 60 * 60 * 1000,
       })
       .status(201)
       .json({
@@ -109,15 +107,12 @@ export const loginUser: RequestHandler = async (req, res) => {
 
     res
       .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        ...cookieSettings,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .cookie("auth_token", accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        ...cookieSettings,
+        maxAge: 24 * 60 * 60 * 1000,
       })
       .status(200)
       .json({
@@ -289,7 +284,8 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
         .cookie("auth_token", jwtToken, {
           httpOnly: true,
           secure: true,
-          sameSite: "lax",
+          sameSite: "none",
+          maxAge: 24 * 60 * 60 * 1000,
         })
         .redirect(FRONTEND_URL);
 
@@ -314,9 +310,8 @@ export const googleAuthCallback: RequestHandler = async (req, res) => {
 
     res
       .cookie("auth_token", jwtToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        ...cookieSettings,
+        maxAge: 24 * 60 * 60 * 1000,
       })
       .redirect(FRONTEND_URL);
   } catch (error) {
@@ -331,9 +326,7 @@ export const logoutUser: RequestHandler = (req, res) => {
   try {
     res
       .clearCookie("auth_token", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        ...cookieSettings,
       })
       .status(200)
       .json({ message: "Logged out successfully", data: req.user });
