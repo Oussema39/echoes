@@ -15,5 +15,5 @@ export const getGoogleRedirectUrl = () => {
 export const cookieSettings: CookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "strict" : "none",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 };
