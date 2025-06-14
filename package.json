@@ -6,7 +6,8 @@
   "scripts": {
     "clean": "rimraf dist node_modules",
     "build:render": "npm install && npm install --only=dev && npm run build",
-    "install:chromium": "yes | npx @puppeteer/browsers install chrome@135.0.7049.114",
+    "install:chromium": "npx @puppeteer/browsers install chrome@135.0.7049.114",
+    "install:chrome": "npx puppeteer browsers install chrome",
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
     "start:render": "node dist/index.js",
