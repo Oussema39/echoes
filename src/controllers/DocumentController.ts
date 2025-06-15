@@ -17,7 +17,7 @@ import { join } from "path";
 import { documentHtmlTemplate } from "../constants/templates";
 import { BASE_PERMISSIONS } from "../constants/permissions";
 import { buildBrowser } from "../config/puppeteerBrowser";
-import { Browser } from "puppeteer";
+import { Browser } from "puppeteer-core";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
