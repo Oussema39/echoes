@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf dist node_modules",
-    "build:render": "npm install && npm install --only=dev && npm run build",
+    "postinstall": "chmod +x render-build.sh && ./render-build.sh",
+    "install:deps": "npm install && npm install --only=dev",
+    "build:render": "npm run install:deps && npm run postinstall && npm run build",
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
     "start:render": "node dist/index.js",
