@@ -3,9 +3,6 @@
 # Exit on error
 set -o errexit
 
-echo "Installing project dependencies..."
-npm install
-
 # Create Puppeteer cache directory if it doesn't exist
 export PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer
 mkdir -p $PUPPETEER_CACHE_DIR
