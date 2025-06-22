@@ -2,6 +2,7 @@ import { CorsOptions } from "cors";
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  "http://localhost:3000",
   process.env.NODE_ENV === "development" ? "http://localhost:3000" : null,
 ].filter(Boolean);
 

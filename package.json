@@ -5,12 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf dist node_modules",
-    "postinstall": "chmod +x render-build.sh && ./render-build.sh",
     "install:deps": "npm install && npm install --only=dev",
-    "build:render": "npm run install:deps && npm run postinstall && npm run build",
     "build": "tsc",
     "start": "node --env-file=.env dist/index.js",
-    "start:render": "node dist/index.js",
     "compile": "tsc && node --env-file=.env dist/index.js",
     "dev": "nodemon -e ts --exec \"npm run compile\""
   },
@@ -33,7 +30,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3",
     "nodemailer": "^6.9.15",
-    "puppeteer": "^24.7.2"
+    "puppeteer-core": "^24.10.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",

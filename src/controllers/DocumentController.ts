@@ -12,11 +12,11 @@ import { IDocument } from "../interface/IDocument";
 import mongoose from "mongoose";
 import { joiCollaborators } from "../helpers/joiCustomTypes";
 import { hasPermission } from "../helpers/utilMethods";
-import puppeteer from "puppeteer";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { documentHtmlTemplate } from "../constants/templates";
 import { BASE_PERMISSIONS } from "../constants/permissions";
+import { buildBrowser } from "../config/puppeteerBrowser";
 
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
@@ -280,7 +280,7 @@ export const generateDocumentPdf: RequestHandler = async (req, res) => {
       styles: quillCSS,
     });
 
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await buildBrowser();
     const page = await browser.newPage();
     await page.setContent(content);
     const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
