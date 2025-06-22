@@ -1,5 +1,7 @@
 import puppeteer, { LaunchOptions } from "puppeteer-core";
 
+const TIMEOUT = 6000; // 1 minute,
+
 const findChromePath = (): string | undefined => {
   let executablePath;
 
@@ -19,22 +21,17 @@ export const buildBrowser = async (options?: Partial<LaunchOptions>) => {
   const exePath = findChromePath();
 
   const args = [
-    "--disable-setuid-sandbox",
-    "--no-sandbox",
-    "--single-process",
-    "--no-zygote",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--no-first-run",
-    "--disable-background-timer-throttling",
-    "--disable-backgrounding-occluded-windows",
-    "--disable-renderer-backgrounding",
+    "--no-sandbox", // Essential for Docker
+    "--disable-setuid-sandbox", // Also essential for Docker
+    "--disable-gpu", // Might help with resource issues
+    "--disable-dev-shm-usage", // Important for Docker on many hosts
   ];
 
   const browser = await puppeteer.launch({
     executablePath: exePath,
     headless: true,
     args,
+    timeout: TIMEOUT,
     ...options,
   });
 

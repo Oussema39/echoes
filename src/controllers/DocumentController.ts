@@ -18,6 +18,8 @@ import { documentHtmlTemplate } from "../constants/templates";
 import { BASE_PERMISSIONS } from "../constants/permissions";
 import { buildBrowser } from "../config/puppeteerBrowser";
 
+const TIMEOUT = 6000; // 1 minute,
+
 export const getDocuments: RequestHandler = async (req, res) => {
   try {
     const documents = await DocumentModel.find()
@@ -282,8 +284,15 @@ export const generateDocumentPdf: RequestHandler = async (req, res) => {
 
     const browser = await buildBrowser();
     const page = await browser.newPage();
-    await page.setContent(content);
-    const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
+    await page.setContent(content, {
+      waitUntil: "networkidle2",
+      timeout: TIMEOUT,
+    });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      timeout: TIMEOUT,
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'attachment; filename="document.pdf"');
