@@ -24,7 +24,8 @@ RUN apk add --no-cache \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    font-noto-emoji
 
 # Copy files
 COPY --from=builder /app/dist ./dist
