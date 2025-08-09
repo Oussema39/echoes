@@ -49,10 +49,6 @@ export const generateStream: RequestHandler = async (req, res) => {
   const cssFile = readFileSync(cssPath, "utf-8");
 
   try {
-    // await GenAi.uploadFile(cssPath, {
-    //   mimeType: "text/css",
-    // });
-
     const styledPrompt = prompt.includes("<styles-section>")
       ? prompt.replace("<styles-section>", cssFile)
       : prompt;

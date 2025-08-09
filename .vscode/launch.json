@@ -10,8 +10,9 @@
       "preLaunchTask": "tsc: build - tsconfig.json", // Optional: triggers build before debug
       "sourceMaps": true, // Explicitly enables source maps
       "cwd": "${workspaceFolder}",
-      "internalConsoleOptions": "openOnSessionStart",
-      "skipFiles": ["<node_internals>/**"]
+      "console": "externalTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }
