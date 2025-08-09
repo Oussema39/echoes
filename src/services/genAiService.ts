@@ -8,7 +8,7 @@ import { IGenerateContentProps } from "../interface/IGenerateContentProps";
 
 const GEMINI_API_KEY = process.env.GEMINI_FLASH_API_KEY;
 
-export class GenAiService {
+class GenAiService {
   private ai: GoogleGenAI;
   private defaultModel = "gemini-2.0-flash";
 

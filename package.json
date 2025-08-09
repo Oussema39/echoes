@@ -30,7 +30,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.3",
     "nodemailer": "^6.9.15",
-    "puppeteer-core": "^24.10.2"
+    "puppeteer-core": "^24.10.2",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",
@@ -43,5 +44,9 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.4"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.9",
+    "utf-8-validate": "^6.0.5"
   }
 }

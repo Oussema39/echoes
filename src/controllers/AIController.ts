@@ -8,6 +8,9 @@ import {
 } from "../utils/prompts";
 import { HF_MODELS_ENDPOINTS } from "../constants/hfModels";
 
+/**
+ * @deprecated This function is deprecated. Use `generateStream` instead.
+ */
 export const paraphrase: RequestHandler = async (req, res) => {
   try {
     const { text } = req.body;
@@ -40,6 +43,9 @@ export const paraphrase: RequestHandler = async (req, res) => {
   }
 };
 
+/**
+ * @deprecated This function is deprecated. Use `generateStream` instead.
+ */
 export const shorten: RequestHandler = async (req, res) => {
   try {
     const { text } = req.body;
@@ -70,6 +76,9 @@ export const shorten: RequestHandler = async (req, res) => {
   }
 };
 
+/**
+ * @deprecated This function is deprecated. Use `generateStream` instead.
+ */
 export const correct: RequestHandler = async (req, res) => {
   try {
     const { text } = req.body;
