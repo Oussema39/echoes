@@ -41,6 +41,8 @@ export const handleAiChatSocket = (socket: Socket, _io: Server) => {
           socket.emit(EVENT_NAMES.CHAT_RECEIVE, chunk.text);
         }
       }
+
+      socket.emit(EVENT_NAMES.CHAT_RECEIVE_END, { message: "end" });
     } catch (error: any) {
       console.error(error);
       socket.emit(

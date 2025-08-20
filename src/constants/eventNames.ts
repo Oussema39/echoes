@@ -1,6 +1,7 @@
 export const EVENT_NAMES = {
   CHAT_SEND: "chat:send_message",
   CHAT_RECEIVE: "chat:receive_message",
+  CHAT_RECEIVE_END: "chat:receive_message_end",
 } as const;
 
 export const ERROR_EVENT_NAMES = Object.fromEntries(
