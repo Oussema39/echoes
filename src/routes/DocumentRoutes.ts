@@ -10,17 +10,18 @@ import {
   shareDocument,
   updateDocument,
 } from "../controllers/DocumentController";
+import { isAuthenticated } from "../middlewares/authMiddleware";
 
 const router = Router();
 
-router.get("/by-user", getDocumentsByUser);
-router.post("/share", shareDocument);
+router.get("/by-user", isAuthenticated, getDocumentsByUser);
+router.post("/share", isAuthenticated, shareDocument);
 router.post("/generate-pdf", generateDocumentPdf);
-router.delete("/:id", () => {}, deleteDocument);
-router.patch("/:id", updateDocument);
-router.get("/:id/versions", getDocVersionsMetadataHandler);
-router.get("/:id/versions/:versionId", getDocVersionDetails);
-router.get("/", getDocuments);
-router.post("/", addDocument);
+router.delete("/:id", isAuthenticated, deleteDocument);
+router.patch("/:id", isAuthenticated, updateDocument);
+router.get("/:id/versions", isAuthenticated, getDocVersionsMetadataHandler);
+router.get("/:id/versions/:versionId", isAuthenticated, getDocVersionDetails);
+router.get("/", isAuthenticated, getDocuments);
+router.post("/", isAuthenticated, addDocument);
 
 export default router;

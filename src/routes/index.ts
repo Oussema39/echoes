@@ -7,7 +7,7 @@ import { isAuthenticated } from "../middlewares/authMiddleware";
 
 const router: TRouter = Router();
 router.use("/user", isAuthenticated, UserRouter);
-router.use("/document", isAuthenticated, DocumentRouter);
+router.use("/document", DocumentRouter);
 router.use("/auth", AuthRouter);
 router.use("/ai", AIRouter);
 router.use("/", (req, res) => {
