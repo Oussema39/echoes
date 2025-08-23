@@ -8,7 +8,7 @@ const router = Router();
 router.post("/paraphrase", isAuthenticated, paraphrase);
 router.post("/shorten", isAuthenticated, shorten);
 router.post("/correct", isAuthenticated, correct);
-router.post("/initStream", isAuthenticated, initStream);
+router.post("/initStream", initStream);
 router.get("/stream", generateStream);
 
 export default router;
