@@ -17,6 +17,8 @@ import { join } from "path";
 import { documentHtmlTemplate } from "../constants/templates";
 import { BASE_PERMISSIONS } from "../constants/permissions";
 import { buildBrowser } from "../config/puppeteerBrowser";
+import { TPermissionLevel } from "../types/TPermissionLevel";
+import { randomUUID } from "crypto";
 
 const TIMEOUT = 6000; // 1 minute,
 
@@ -246,6 +248,61 @@ export const shareDocument: RequestHandler = async (req, res) => {
     res
       .status(200)
       .json({ message: "Document shared successfully", data: document });
+  } catch (error) {
+    console.error("Error sharing document:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const generateDocumentShareLink: RequestHandler = async (req, res) => {
+  const schema = Joi.object({
+    docId: joiCustomObjectId().required(),
+    permissionLevel: Joi.string()
+      .allow(...Object.values(TPermissionLevel))
+      .optional(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json(formatValidationError(error));
+  }
+
+  const { docId, permissionLevel } = req.body;
+  const { id: userId } = req.user ?? {};
+
+  try {
+    const document = await DocumentModel.findById(docId);
+
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (!hasPermission("share", userId!, document)) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to share this document" });
+    }
+
+    if (document.shareLinks?.length) {
+      return res
+        .status(403)
+        .json({ message: "Document already has a share link" });
+    }
+
+    const shareId = randomUUID();
+    const shareLink = `${process.env.FRONTEND_URL}/${docId}/${shareId}`;
+
+    document.shareLinks?.push({
+      permissionLevel,
+      shareId,
+    });
+
+    await document.save();
+
+    res.status(200).json({
+      message: "Document shared successfully",
+      data: { shareLink, permissionLevel },
+    });
   } catch (error) {
     console.error("Error sharing document:", error);
     res.status(500).json({ message: "Internal server error" });

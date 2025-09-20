@@ -25,6 +25,21 @@ const documentSchema = new Schema<IDocument>(
         { _id: false }
       ),
     ],
+    shareLinks: [
+      new Schema(
+        {
+          shareId: String,
+          isActive: { type: Boolean, default: true },
+          revokeAt: Number,
+          permissionLevel: {
+            type: String,
+            enum: TPermissionLevel,
+            default: TPermissionLevel.VIEWER,
+          },
+        },
+        { _id: false }
+      ),
+    ],
   },
   {
     timestamps: true,

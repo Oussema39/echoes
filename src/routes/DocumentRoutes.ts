@@ -3,6 +3,7 @@ import {
   addDocument,
   deleteDocument,
   generateDocumentPdf,
+  generateDocumentShareLink,
   getDocuments,
   getDocumentsByUser,
   getDocVersionDetails,
@@ -16,6 +17,7 @@ const router = Router();
 
 router.get("/by-user", isAuthenticated, getDocumentsByUser);
 router.post("/share", isAuthenticated, shareDocument);
+router.post("/share-link", isAuthenticated, generateDocumentShareLink);
 router.post("/generate-pdf", generateDocumentPdf);
 router.delete("/:id", isAuthenticated, deleteDocument);
 router.patch("/:id", isAuthenticated, updateDocument);
