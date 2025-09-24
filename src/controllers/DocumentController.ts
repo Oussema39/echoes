@@ -301,10 +301,68 @@ export const generateDocumentShareLink: RequestHandler = async (req, res) => {
 
     res.status(200).json({
       message: "Document shared successfully",
-      data: { shareLink, permissionLevel },
+      data: document,
     });
   } catch (error) {
     console.error("Error sharing document:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateDocumentShareLink: RequestHandler = async (req, res) => {
+  const schema = Joi.object<{
+    shareId: string;
+    permissionLevel: TPermissionLevel;
+    isActive: boolean;
+  }>({
+    shareId: Joi.string().required(),
+    permissionLevel: Joi.string()
+      .allow(...Object.values(TPermissionLevel))
+      .optional(),
+    isActive: Joi.boolean().optional(),
+  });
+
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json(formatValidationError(error));
+  }
+
+  const { shareId, permissionLevel, isActive } = value;
+  const { id: userId } = req.user ?? {};
+
+  try {
+    const document = await DocumentModel.findOne({
+      "shareLinks.shareId": shareId,
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    if (!hasPermission("share", userId!, document)) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to share this document" });
+    }
+
+    document.shareLinks = document.shareLinks?.map((sl) => {
+      if (sl.shareId !== shareId) return sl;
+      return {
+        ...sl,
+        permissionLevel,
+        isActive,
+      };
+    });
+
+    await document.save();
+
+    res.status(200).json({
+      message: "Share link updated successfully",
+      data: document,
+    });
+  } catch (error) {
+    console.error("Error updating the share link:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
