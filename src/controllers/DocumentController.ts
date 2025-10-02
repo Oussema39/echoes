@@ -284,13 +284,12 @@ export const generateDocumentShareLink: RequestHandler = async (req, res) => {
     }
 
     if (document.shareLinks?.length) {
-      return res
-        .status(403)
-        .json({ message: "Document already has a share link" });
+      return res.status(200).json({
+        data: document,
+      });
     }
 
     const shareId = randomUUID();
-    const shareLink = `${process.env.FRONTEND_URL}/${docId}/${shareId}`;
 
     document.shareLinks?.push({
       permissionLevel,
