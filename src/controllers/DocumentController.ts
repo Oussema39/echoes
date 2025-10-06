@@ -37,7 +37,28 @@ export const getDocuments: RequestHandler = async (req, res) => {
 };
 
 export const getDocumentsByUser: RequestHandler = async (req, res) => {
-  const userId = mongoose.Types.ObjectId.createFromHexString(req?.user?.id!);
+  const reqUserId = req?.user?.id!;
+  const userId = mongoose.Types.ObjectId.createFromHexString(reqUserId);
+
+  const { shareId } = req.query;
+
+  if (shareId) {
+    const document = await DocumentModel.findOne({
+      "shareLinks.shareId": shareId,
+    });
+    if (
+      document &&
+      document.collaborators?.findIndex(
+        (collab) => collab.userId === reqUserId
+      ) === -1
+    ) {
+      document.collaborators.push({
+        permissionLevel: TPermissionLevel.VIEWER,
+        userId: reqUserId,
+      });
+      await document.save();
+    }
+  }
 
   try {
     const result = await DocumentModel.aggregate([
