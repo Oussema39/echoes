@@ -1,9 +1,13 @@
 import { CorsOptions } from "cors";
 
+const devOrigins = ["http://localhost:3000", "http://192.168.1.2:3000"];
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  process.env.NODE_ENV === "development" ? "http://localhost:3000" : null,
-].filter(Boolean);
+  process.env.NODE_ENV === "development" ? devOrigins : null,
+]
+  .flat()
+  .filter(Boolean);
 
 export const corsConfig: CorsOptions = {
   origin: function (
